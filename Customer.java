@@ -1,268 +1,161 @@
 /*
- Class: Customer.java
+Abstract class: User.java
 
- Purpose:
- - Represents a customer in the online shopping system
- - Manages the customer's shopping cart, payment method, and orders
-  - Extends User class for customer-specific attributes
+Purpose:
+- Represents a user in the online shopping system
+- Provide common attributes, login/logout, and abstract method: product search
 */
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Customer extends User implements Operations {
-
-  private static final int MAX_INSTANCES = 100;
-  private static int instanceCount = 0;
-  private ShoppingCart cart;
-  private String paymentMethod;
-  private ArrayList<Order> orders;
+public abstract class User {
+  private String userID;
+  private String name;
+  private String phoneNumber;
+  private String address;
+  private String password;
+  private boolean loggedIn;
+  //private Map<Integer, Product> wishList = new HashMap<>();
 
   // Constructor
-  public Customer(String userID, String name, String phoneNumber, String address, String password) {
-    super(userID, name, phoneNumber, address, password);
-
-    if (instanceCount >= MAX_INSTANCES) {
-      throw new IllegalStateException("Reached max Customer limit " + MAX_INSTANCES);
-    }
-
-    this.cart = new ShoppingCart(userID);
-    this.orders = new ArrayList<>();
-
-    instanceCount++;
+  @SuppressWarnings("OverridableMethodCallInConstructor")
+  public User(String userID, String name, String phoneNumber, String address, String password) {
+    this.userID = userID;
+    this.name = name;
+    setPhoneNumber(phoneNumber);
+    this.address = address;
+    setPassword(password); 
   }
 
   // Getters and setters
-  public static int getMaxInstances() {
-    return MAX_INSTANCES;
+  public String getUserID() {
+    return userID;
   }
 
-  public static int getInstanceCount() {
-    return instanceCount;
+  public String getName() {
+    return name;
   }
 
-  public ShoppingCart getCart() {
-    return cart;
+  public String getPhoneNumber() {
+    return phoneNumber;
   }
 
-  public String getPaymentMethod() {
-    return paymentMethod;
+  public String getAddress() {
+    return address;
   }
 
-  public ArrayList<Order> getOrders() {
-    return orders;
+  /**
+    * Validates the phone number format.
+    * Accepts formats like:
+    *  - 123-456-7890
+    *  - (123) 456-7890
+    *  - 1234567890
+    *  - +1 123-456-7890
+  */
+  public boolean isValidPhoneNumber(String phoneNumber) {
+    if (phoneNumber == null || phoneNumber.isBlank()) {
+      return false;
+    }
+    String regex = "^(\\+\\d{1,2}\\s?)?(\\(?\\d{3}\\)?[\\s-]?)?\\d{3}[\\s-]?\\d{4}$";
+    return phoneNumber.matches(regex);
   }
 
-  public void setCart(ShoppingCart cart) {
-    this.cart = cart;
+  public void setPhoneNumber(String newPhoneNumber) {
+    if (!isValidPhoneNumber(newPhoneNumber)) {
+        System.out.println("Please type your phone number is valid form.");
+        return;
+    }
+    this.phoneNumber = newPhoneNumber;
   }
 
-  public void setPaymentMethod(String paymentMethod) {
-    this.paymentMethod = paymentMethod;
+  public void setAddress(String newAddress) {
+    this.address = newAddress;
   }
 
-  public void setOrders(ArrayList<Order> orders) {
-    this.orders = orders;
+  public void setName(String newName) {
+    this.name = newName;
   }
 
-  // Customer-related functions
-  public void changePaymentMethod(String paymentMethod) {
-    setPaymentMethod(paymentMethod);
-    System.out.printf("Your payment method was changed to %s!%n", paymentMethod);
+  public void setUserID(String userID) {
+    this.userID = userID;
   }
 
-  // Product-related functions
-  @Override
-  public void addProduct(Product p, int qty) {
-    cart.addProduct(p, qty);
-  }
-
-  @Override
-  public void removeProduct(Product p, int qty) {
-    cart.removeProduct(p, qty);
-  }
-
-  // Order-related functions
-  public void displayOrders() {
-    if (orders.isEmpty()) {
-      System.out.println("You have no orders yet.");
+  public void setPassword(String password) {
+    if (password == null) {
+      System.out.println("Password cannot be null.");
       return;
     }
-
-    for (Order o : orders) {
-      System.out.println(o.getOrderId());
+    if (isValidPassword(password)) {
+      this.password = password;
+      System.out.println("Password set successfully!");
+    } 
+    else {
+      System.out.println("Failed to set password. Please try again with a stronger one.");
     }
   }
 
-  public void placeOrder() {
-    if (this.cart.getproductsList().isEmpty()) {
-      System.out.println("Your cart is empty. Please add items before placing an order.");
-      return;
-    }
-
-    if (paymentMethod == null) {
-      System.out.println("Please set a payment method before placing an order.");
-      return;
-    }
-
-    // Create new order
-    Order order = new Order();
-
-    // Copy from cart to order
-    order.setProductOrdered(this.cart.getproductsList());
-
-    // Print order content
-    System.out.println("You ordered:");
-    for (Map.Entry<Product, Integer> entry : order.getProductOrdered().entrySet()) {
-      System.out.printf("- %s x %d%n", entry.getKey().getName(), entry.getValue());
-    }
-
-    // Process order
-    order.processOrder();
-
-    // Output total cost
-    System.out.printf("Total cost: $%.2f%n", order.computeTotalCost());
-
-    // Add order to user order history
-    orders.add(order);
+  public boolean isLoggedIn() {
+    return loggedIn;
   }
 
-  public void confirmDelivery(String orderID) {
-
-    Order found = null;
-    for (Order o : orders) {
-      if (o.getOrderId().equals(orderID)) {
-        found = o;
-        break;
+  // Login/logout-related methods
+  //I want to make the password more powerful that must contain at least 1 symbol and Uppercase letter and number to be valid
+  public boolean isValidPassword(String password) {
+    boolean containsSymbol = false;
+    boolean containsNumber = false;
+    boolean containsUppercase = false;
+    if (password == null || password.length() < 10) {
+      System.out.println("Password must be at least 10 characters long.");
+      return false;
+    }
+    for (char c : password.toCharArray()) {
+      if (Character.isUpperCase(c)) {
+        containsUppercase = true;
+      } 
+      else if (Character.isDigit(c)) {
+        containsNumber = true;
+      } 
+      else if (!Character.isLetterOrDigit(c)) {
+        containsSymbol = true;
       }
     }
-
-    if (found.isCanceled()) {
-      System.out.println("Cannot deliver a canceled order.");
-      return;
+    if (!containsUppercase) {
+      System.out.println("Password must contain at least one uppercase letter.");
+      return false;
     }
 
-    if (orders.isEmpty()) {
-      System.out.println("You have no orders. Please place an order first.");
-      return;
+    if (!containsNumber) {
+      System.out.println("Password must contain at least one number.");
+      return false;
     }
 
-    if (found.isDelivered()) {
-      System.out.println("This order has already been marked as delivered.");
-      return;
+    if (!containsSymbol) {
+      System.out.println("Password must contain at least one special symbol (e.g., !, @, #, $).");
+      return false;
     }
-
-    // Mark as delivered
-    found.setDelivered(true);
-    found.setDeliveryDate(new java.util.Date());
-    System.out.println("Your order has been marked as delivered.");
+    return true; 
   }
 
-  public void cancelOrder(String orderID) {
-    if (orders.isEmpty()) {
-      System.out.println("You have no orders. Please place an order first.");
-      return;
+  public boolean login(String userID, String password) {
+    if (this.userID.equals(userID) && this.password.equals(password)) {
+      loggedIn = true;
     }
-
-    Order found = null;
-    for (Order o : orders) {
-      if (o.getOrderId().equals(orderID)) {
-        found = o;
-        break;
-      }
-    }
-
-    if (found == null) {
-      System.out.println("Order not found.");
-      return;
-    }
-
-    found.cancelOrder();
-    orders.remove(found);
+    return loggedIn;
   }
 
-  public void returnOrder(String orderID) {
-    if (orders.isEmpty()) {
-      System.out.println("You have no orders. Please place an order first.");
-      return;
+  public void logout() {
+    if (loggedIn) {
+      System.out.println("User " + userID + " logged out.");
+      loggedIn = false;
     }
-
-    Order found = null;
-    for (Order o : orders) {
-      if (o.getOrderId().equals(orderID)) {
-        found = o;
-        break;
-      }
-    }
-
-    if (found == null) {
-      System.out.println("Order not found.");
-      return;
-    }
-
-    found.initiateReturn();
   }
 
-  public void completeReturn(String orderID) {
-    if (orders.isEmpty()) {
-      System.out.println("You have no orders. Please place an order first.");
-      return;
-    }
-
-    Order found = null;
-    for (Order o : orders) {
-      if (o.getOrderId().equals(orderID)) {
-        found = o;
-        break;
-      }
-    }
-
-    if (found == null) {
-      System.out.println("Order not found.");
-      return;
-    }
-
-    found.completeReturn();
-  }
-
-  public void checkRefund(String orderID) {
-    if (orders.isEmpty()) {
-      System.out.println("You have no orders. Please place an order first.");
-      return;
-    }
-
-    Order found = null;
-    for (Order o : orders) {
-      if (o.getOrderId().equals(orderID)) {
-        found = o;
-        break;
-      }
-    }
-
-    if (found == null) {
-      System.out.println("Order not found.");
-      return;
-    }
-
-    found.refundStatus();
-  }
-
-  @Override
-  public HashMap<String, Product> searchProducts(
+  // Abstract method: searchProducts
+  public abstract HashMap<String, Product> searchProducts(
       String category,
       double minPrice,
       double maxPrice,
       boolean isAvailable,
-      boolean discountAvailable) {
-    HashMap<String, Product> out = new HashMap<>();
-    for (Product p : Main.products) { // <- static access
-      if (category != null && !category.equalsIgnoreCase(p.getCategory())) continue;
-      if (p.getPrice() < minPrice || p.getPrice() > maxPrice) continue;
-      if (isAvailable && !p.isAvailable()) continue;
-      if (discountAvailable && p.getDiscountPercent() <= 0) continue;
-      out.put(p.getProductId(), p);
-    }
-    return out;
-  }
+      boolean discountAvailable);
 }

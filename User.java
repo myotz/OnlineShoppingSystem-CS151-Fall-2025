@@ -7,6 +7,7 @@ Purpose:
 */
 
 import java.util.HashMap;
+import java.util.Map;
 
 public abstract class User {
   private String userID;
@@ -15,14 +16,16 @@ public abstract class User {
   private String address;
   private String password;
   private boolean loggedIn;
+  //private Map<Integer, Product> wishList = new HashMap<>();
 
   // Constructor
+  @SuppressWarnings("OverridableMethodCallInConstructor")
   public User(String userID, String name, String phoneNumber, String address, String password) {
     this.userID = userID;
     this.name = name;
-    this.phoneNumber = phoneNumber;
+    setPhoneNumber(phoneNumber);
     this.address = address;
-    this.password = password;
+    setPassword(password); 
   }
 
   // Getters and setters
@@ -42,7 +45,27 @@ public abstract class User {
     return address;
   }
 
+  /**
+    * Validates the phone number format.
+    * Accepts formats like:
+    *  - 123-456-7890
+    *  - (123) 456-7890
+    *  - 1234567890
+    *  - +1 123-456-7890
+  */
+  public boolean isValidPhoneNumber(String phoneNumber) {
+    if (phoneNumber == null || phoneNumber.isBlank()) {
+      return false;
+    }
+    String regex = "^(\\+\\d{1,2}\\s?)?(\\(?\\d{3}\\)?[\\s-]?)?\\d{3}[\\s-]?\\d{4}$";
+    return phoneNumber.matches(regex);
+  }
+
   public void setPhoneNumber(String newPhoneNumber) {
+    if (!isValidPhoneNumber(newPhoneNumber)) {
+        System.out.println("Please type your phone number is valid form.");
+        return;
+    }
     this.phoneNumber = newPhoneNumber;
   }
 
@@ -59,8 +82,16 @@ public abstract class User {
   }
 
   public void setPassword(String password) {
-    if (PasswordStrengthTest(password)) {
+    if (password == null) {
+      System.out.println("Password cannot be null.");
+      return;
+    }
+    if (isValidPassword(password)) {
       this.password = password;
+      System.out.println("Password set successfully!");
+    } 
+    else {
+      System.out.println("Failed to set password. Please try again with a stronger one.");
     }
   }
 
@@ -69,12 +100,41 @@ public abstract class User {
   }
 
   // Login/logout-related methods
-  public boolean PasswordStrengthTest(String password) {
-    if (password.length() < 10) {
+  //I want to make the password more powerful that must contain at least 1 symbol and Uppercase letter and number to be valid
+  public boolean isValidPassword(String password) {
+    boolean containsSymbol = false;
+    boolean containsNumber = false;
+    boolean containsUppercase = false;
+    if (password == null || password.length() < 10) {
       System.out.println("Password must be at least 10 characters long.");
       return false;
     }
-    return true;
+    for (char c : password.toCharArray()) {
+      if (Character.isUpperCase(c)) {
+        containsUppercase = true;
+      } 
+      else if (Character.isDigit(c)) {
+        containsNumber = true;
+      } 
+      else if (!Character.isLetterOrDigit(c)) {
+        containsSymbol = true;
+      }
+    }
+    if (!containsUppercase) {
+      System.out.println("Password must contain at least one uppercase letter.");
+      return false;
+    }
+
+    if (!containsNumber) {
+      System.out.println("Password must contain at least one number.");
+      return false;
+    }
+
+    if (!containsSymbol) {
+      System.out.println("Password must contain at least one special symbol (e.g., !, @, #, $).");
+      return false;
+    }
+    return true; 
   }
 
   public boolean login(String userID, String password) {
